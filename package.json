@@ -1,0 +1,20 @@
+{
+  "name": "typescript-node-express-realworld-example-app",
+  "version": "0.0.0",
+  "description": "> ### [YOUR_FRAMEWORK] codebase containing real world examples (CRUD, auth, advanced patterns, etc) that adheres to the [RealWorld](https://github.com/gothinkster/realworld) spec and API.",
+  "main": "app.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon --exec 'ts-node' ./app.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gothinkster/realworld-starter-kit.git"
+  },
+  "author": "Josh Black",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/gothinkster/realworld-starter-kit/issues"
+  },
+  "homepage": "https://github.com/gothinkster/realworld-starter-kit#readme"
+}
