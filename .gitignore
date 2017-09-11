@@ -12,6 +12,9 @@
 .settings/
 
 
+# Design Files
+*.sketch
+
 #System Files
 .DS_Store
 Thumbs.db
