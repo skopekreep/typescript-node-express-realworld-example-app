@@ -3,7 +3,7 @@ import * as express from 'express';
 import { Application } from 'express';
 import * as bodyParser from 'body-parser';
 import { MainRouter } from './api/routes/index';
-import { connectToMongoDB } from './api/models/db';
+import { connectToMongoDB } from './api/utilities/database';
 import { loadErrorHandlers } from './api/utilities/error-handling';
 import './api/utilities/passport';
 // FIXME: Sort out passport stuff...

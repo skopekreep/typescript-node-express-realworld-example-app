@@ -2,8 +2,10 @@
 import * as mongoose from 'mongoose';
 import * as Bluebird from 'bluebird';
 
+
 // Use bluebird promises in lieu of mongoose promises throughout application.
 (mongoose as any).Promise = Bluebird;
+
 
 export function connectToMongoDB() {
 
