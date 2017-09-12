@@ -1,27 +1,23 @@
 
-import { Router } from 'express';
-import { Tag } from '../models/tag-model';
+import { Article } from '../models/article-model';
+import { Router, Request, Response, NextFunction } from 'express';
+
 
 const router: Router = Router();
 
-router.get('/', getTags);
 
-function getTags(req, res) {
+// FIXME: Rewrite to pull from Articles...
+router.get('/', (req: Request, res: Response, next: NextFunction) => {
 
-	const projection = {tags: 1, _id: 0};
+	Article
+		.find()
+		.distinct('tagList')
+		.then((tagsArray: [string]) => {
+			return res.json({tags: tagsArray});
+		})
+		.catch(next);
 
-	Tag
-		.find({}, projection)
-		.exec((err: any, results) => {
+});
 
-			if (err) {
-				console.log('Error finding tags');
-				res.status(500).json(err);
-			} else {
-				console.log('Found ' + results.length + ' result(s)');
-				res.status(200).json(results[0]);
-			}
-		});
-}
 
 export const TagRoutes: Router = router;
