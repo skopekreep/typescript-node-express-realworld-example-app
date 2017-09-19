@@ -1,4 +1,7 @@
 
+import { IUserModel } from '../models/user-model';
+
+
 export interface IArticle {
 	slug: string;
 	title: string;
@@ -9,4 +12,5 @@ export interface IArticle {
 	updatedAt: Date;
 	favorited: boolean;
 	favoritesCount: number;
+	author: IUserModel;
 }

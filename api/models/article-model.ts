@@ -1,13 +1,11 @@
 
 import { model, Model, Schema, Document } from 'mongoose';
 import { IArticle } from '../interfaces/article-interface';
-import { IUserModel } from './user-model';
-// import * as mongoose from 'mongoose';
-// const User = mongoose.model('User');
+import { IUserModel, User } from './user-model';
 
 
 export interface IArticleModel extends IArticle, Document {
-	toArticleJSON(user);
+	formatAsArticleJSON(user);
 }
 
 
@@ -22,21 +20,22 @@ const ArticleSchema = new Schema({
 }, {timestamps: true});
 
 
-ArticleSchema.methods.toArticleJSON = function(user: IUserModel) {
+ArticleSchema.methods.formatAsArticleJSON = function(user: IUserModel) {
+
 	return {
 		slug: this.slug,
 		title: this.title,
 		description: this.description,
 		body: this.body,
-		tagList: this.tagList,
 		createdAt: this.createdAt,
 		updatedAt: this.updatedAt,
+		tagList: this.tagList,
 		favorited: user ? user.isFavorite(this._id) : false,
 		favoritesCount: this.favoritesCount,
-		author: this.author
+		author: this.author.formatAsProfileJSON(user)
 	};
+
 };
-// TODO: taglist
-// TODO fix author
+
 
 export const Article: Model<IArticleModel> = model<IArticleModel>('Article', ArticleSchema);

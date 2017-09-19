@@ -2,12 +2,12 @@
 import { Document, Schema, Model, model } from 'mongoose';
 import { IUser } from '../interfaces/user-interface';
 import * as jwt from 'jsonwebtoken';
-import { jwtSecret } from './authentication';
+import { jwtSecret } from '../utilities/authentication';
 import * as crypto from 'crypto';
 
 
 export interface IUserModel extends IUser, Document {
-	token: string;
+	token?: string;
 	generateJWT();
 	formatAsUserJSON();
 	setPassword(password);

@@ -1,6 +1,6 @@
 
 import { IUserModel, User } from '../models/user-model';
-import { authentication } from '../models/authentication';
+import { authentication } from '../utilities/authentication';
 import { NextFunction,  Response, Router } from 'express';
 import { JWTRequest } from '../interfaces/requests-interface';
 
