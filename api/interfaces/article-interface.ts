@@ -14,3 +14,10 @@ export interface IArticle {
 	favoritesCount: number;
 	author: IUserModel;
 }
+
+
+export interface IQuery {
+	tagList: {$in: any[]};
+	author: string;
+	_id: {$in: any[]};
+}

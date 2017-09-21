@@ -4,21 +4,17 @@ import { authentication } from '../utilities/authentication';
 import { ProfileRequest } from '../interfaces/requests-interface';
 import { Article, IArticleModel } from '../models/article-model';
 import { IUserModel, User } from '../models/user-model';
-// import * as Promise from 'bluebird';
+import { IQuery } from '../interfaces/article-interface';
+import { Schema } from 'mongoose';
 
 const router: Router = Router();
-const Promise = require('bluebird');
+const Promise = require('bluebird');  // FIXME: how to handle this in Typescript?
 
 
 /**
  * GET /api/articles
  */
 router.get('/', authentication.optional, (req: ProfileRequest, res: Response, next: NextFunction) => {
-
-	// Handle all URL query parameters
-	const limit: number = req.query.limit ? Number(req.query.limit) : 20;
-	const offset: number = req.query.offset ? Number(req.query.offset) : 0;
-
 
 	//  Try to determine the user making the request
 	let thisUser: IUserModel;
@@ -37,133 +33,97 @@ router.get('/', authentication.optional, (req: ProfileRequest, res: Response, ne
 		thisUser = req.profile;
 	}
 
+	// Parse URL query strings and create a query object
+	const limit: number = req.query.limit ? Number(req.query.limit) : 20;
+	const offset: number = req.query.offset ? Number(req.query.offset) : 0;
 
-	// Define promises
-	const p1 = thisUser;
+	const query = <IQuery> {};  // ISSUE: how to resolve?
 
-	const p2 = Article.count( {});
+	// Handle single tag or multiple tags in query (...&tag=git&tag=node...)
+	if (typeof req.query.tag !== 'undefined') {
+		if (Array.isArray(req.query.tag)) {
+			query.tagList = {$in: req.query.tag};
+		} else {
+			query.tagList = {$in: [req.query.tag]};
+		}
+	}
 
-	const p3 = Article.find().limit(limit).skip(offset).populate('author').catch();
-
-	// Resolve and use promise results
 	Promise
-		.all([p1, p2, p3])
-		.then(results => {
-			const user: IUserModel = results[0];
-			const articlesCount: number = results[1];
-			const articles = results[2];
+		.all([
+			req.query.author ? User.findOne({username: req.query.author}) : 'noAuthor',
+			req.query.favorited
+				? User
+						.find({username: req.query.favorited})
+						.then(users => {
+							let favoritedArticles: [Schema.Types.ObjectId];
+							users.forEach((user, userIndex) => {
+								user.favorites.forEach((favorite, favoriteIndex) => {
+									if (userIndex === 0 && favoriteIndex === 0) {
+										favoritedArticles = [favorite];
+									} else {
+										favoritedArticles.push(favorite);
+									}
+								});
+							});
+							return favoritedArticles;
+						})
+				: 'noFavorites'
+		])
+		.then( results => {
+			const author = results[0];
+			const favoritedArticleIds = results[1];
 
-			res.json(
-				{articles: articles.map((article: IArticleModel) => {
-					return article.formatAsArticleJSON(user);
-				}),
-				articlesCount});
-		})
-		.catch(next);
+			// Return no articles for unknown author, but ignore author filter if none was provided
+			if (author !== 'noAuthor') {
+				query.author = author;
+			}
 
+			/* Restrict the query results to only article IDs that are
+				favorited by the username(s) specified in the query string.
+
+				Note: Choosing to interpret multiple usernames as an 'or' operation,
+				meaning that articles favorited by ANY of the users will be returned,
+				as opposed to an 'and' operation wherein only articles favorited by
+			 	ALL usernames would be returned.
+			*/
+			if (favoritedArticleIds !== 'noFavorites') {
+				query._id = {$in: favoritedArticleIds};
+			}
+
+
+			// Define promises
+			const p1 = thisUser;
+
+			const p2 = Article.count(query).exec();
+			/* ISSUE: Should count be MIN(count, limit)? or should it count all results,
+				even if not displayed due to limit or offset query string parameter
+			*/
+
+			const p3 =
+				Article
+					.find(query)
+					.limit(limit)
+					.skip(offset)		// FIXME: does order matter?
+					.populate('author')
+					.exec();
+
+			// Resolve and use promise results
+			Promise
+				.all([p1, p2, p3])
+				.then(results => {
+					const user: IUserModel = results[0];
+					const articlesCount: number = results[1];
+					const articles = results[2];
+
+					res.json(
+						{articles: articles.map((article: IArticleModel) => {
+							return article.formatAsArticleJSON(user);
+						}),
+							articlesCount});
+				})
+				.catch(next);
+		});
 });
-
-
-// PREVIOUS ATTEMPT:
-// router.get('/', authentication.optional, (req: ProfileRequest, res: Response, next: NextFunction) => {
-//
-// 	let articlesCount = 0;
-// 	let thisUser: IUserModel;
-//
-// 	// If authentication was performed was successful look up the profile relative to authenticated user
-// 	if (req.payload) {
-// 		User
-// 			.findById(req.payload.id)
-// 			.then( (user: IUserModel) => {
-// 				return thisUser = req.profile.formatAsProfileJSON(user);
-// 			})
-// 			.catch();
-//
-// 		// If authentication was NOT performed or successful look up profile relative to that same user (following = false)
-// 	} else {
-// 		thisUser = req.profile;
-// 	}
-//
-// 	Article
-// 		.count( (err, count) => {
-// 			articlesCount = count;
-// 		})
-// 		.find()
-// 		.sort({updatedAt: 'desc'})
-// 		.then( (articles: IArticleModel[]) => {
-// 			res.json({articles: articles.map(article => {
-// 				console.log(article);
-// 				return article.formatAsArticleJSON(thisUser);
-// 				}),	articlesCount
-// 			});
-// 		})
-// 		.catch(next);
-// });
-
-
-// WORKING:
-// interface IQuery {
-// 		tagList: {$in: any[]};
-// 		author: string;
-// 		_id: {$in: any[]};
-// 		limit: number;
-// 		offset: number;
-// 	}
-// let query: IQuery;
-// 	let limit = 20;
-// 	let offset = 0;
-//
-// 	if (typeof req.query.limit !== 'undefined') {
-// 		limit = req.query.limit;
-// 	}
-//
-// 	if (typeof req.query.offset !== 'undefined') {
-// 		offset = req.query.offset;
-// 	}
-//
-// 	if ( typeof req.query.tag !== 'undefined' ) {
-// 		query.tagList = {$in : [req.query.tag]};
-// 	}
-//
-// 	Promise.all([
-// 		req.query.author ? User.findOne({username: req.query.author}) : null,
-// 		req.query.favorited ? User.findOne({username: req.query.favorited}) : null
-// 	]).then(function(results){
-// 		const author = results[0];
-// 		const favoriter = results[1];
-//
-// 		if (author) {
-// 			query.author = author._id;
-// 		}
-//
-// 		if (favoriter) {
-// 			query._id = {$in: favoriter.favorites};
-// 		} else if (req.query.favorited) {
-// 			query._id = {$in: []};
-// 		}
-//
-// 		Promise.all([
-// 			Article.find(query)
-// 				.limit(Number(limit))
-// 				.skip(Number(offset))
-// 				.sort({createdAt: 'desc'})
-// 				.populate('author')
-// 				.exec(),
-// 			Article.count(query).exec(),
-// 			req.payload ? User.findById(req.payload.id) : null,
-// 		]).then(function(results){
-// 			const articles = results[0];
-// 			const articlesCount = results[1];
-// 			const user = results[2];
-//
-// 			return res.json({
-// 				articles: articles.map(function(article) {
-// 					return article.formatAsArticleJSON(user);
-// 				}),
-// 				articlesCount
-// 			});
-// 		});
-// 	}).catch(next);
 
 
 // TODO: Remaining routes

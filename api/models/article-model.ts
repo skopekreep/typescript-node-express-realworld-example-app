@@ -10,7 +10,7 @@ export interface IArticleModel extends IArticle, Document {
 
 
 const ArticleSchema = new Schema({
-	slug: {type: String, lowercase: true, unique: true},
+	slug: {type: String},		// FIXME: Add , lowercase: true, unique: true
 	title: String,
 	description: String,
 	body: String,

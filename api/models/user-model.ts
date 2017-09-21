@@ -8,6 +8,7 @@ import * as crypto from 'crypto';
 
 export interface IUserModel extends IUser, Document {
 	token?: string;
+	favorites: [Schema.Types.ObjectId];
 	generateJWT();
 	formatAsUserJSON();
 	setPassword(password);
