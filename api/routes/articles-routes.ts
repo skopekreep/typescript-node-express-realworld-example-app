@@ -1,11 +1,12 @@
 
 import { Router, NextFunction, Response } from 'express';
 import { authentication } from '../utilities/authentication';
-import { ProfileRequest } from '../interfaces/requests-interface';
+import { JWTRequest, ProfileRequest } from '../interfaces/requests-interface';
 import { Article, IArticleModel } from '../models/article-model';
 import { IUserModel, User } from '../models/user-model';
 import { IQuery } from '../interfaces/article-interface';
 import { Schema } from 'mongoose';
+import * as slugify from 'slugify';
 
 const router: Router = Router();
 const Promise = require('bluebird');  // FIXME: how to handle this in Typescript?
@@ -14,6 +15,8 @@ const Promise = require('bluebird');  // FIXME: how to handle this in Typescript
 /**
  * GET /api/articles
  */
+// FIXME: authorized user who has favorited own articles showing false.
+// Should show true for all returned josh articles
 router.get('/', authentication.optional, (req: ProfileRequest, res: Response, next: NextFunction) => {
 
 	//  Try to determine the user making the request
@@ -126,10 +129,46 @@ router.get('/', authentication.optional, (req: ProfileRequest, res: Response, ne
 });
 
 
+/**
+ * POST /api/articles
+ */
+router.post('/', authentication.required, (req: JWTRequest, res: Response, next: NextFunction) => {
+
+	// Examine the request body for completeness
+	const article: IArticleModel = new Article();
+
+	if (typeof req.body.article.title !== 'undefined' &&
+		typeof req.body.article.description !== 'undefined' &&
+		typeof req.body.article.body !== 'undefined') {
+		article.title = req.body.article.title;
+		article.description = req.body.article.description;
+		article.body = req.body.article.body;
+		article.slug = slugify(article.title, {lower: true});
+	} else {
+		res.json('Error in article input: missing title, desc, or body.');
+	}
+
+	if (typeof req.body.article.tagList !== 'undefined') {
+		article.tagList = req.body.article.tagList;
+	}
+
+	// Verify authentication successful, then save and return article
+	User
+		.findById(req.payload.id)
+		.then(user => {
+			article.author = user;
+			return article.save().then(() => {
+				return res.json({article: article.formatAsArticleJSON(user)});
+			});
+		})
+		.catch(next);
+});
+
+
 // TODO: Remaining routes
 // GET /api/articles/feed
+
 // GET /api/articles/:slug
-// POST /api/articles
 // PUT /api/articles/:slug
 // DELETE /api/articles/:slug
 

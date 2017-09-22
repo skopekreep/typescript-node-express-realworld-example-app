@@ -39,6 +39,7 @@
     "mongoose": "^4.11.9",
     "passport": "^0.4.0",
     "passport-local": "^1.0.0",
+    "slugify": "^1.2.1",
     "ts-node": "^3.3.0",
     "typescript": "^2.5.2"
   }

@@ -1,6 +1,6 @@
 
 import { Router, Response, NextFunction, Request } from 'express';
-import { User } from '../models/user-model';
+import { IUserModel, User } from '../models/user-model';
 import * as passport from 'passport';
 
 const router: Router = Router();
@@ -11,7 +11,7 @@ const router: Router = Router();
  */
 router.post('/', (req: Request, res: Response, next: NextFunction) => {
 
-	const user = new User();
+	const user: IUserModel = new User();
 
 	user.username = req.body.user.username;
 	user.email = req.body.user.email;
@@ -32,7 +32,7 @@ router.post('/', (req: Request, res: Response, next: NextFunction) => {
 /**
  * POST /api/users/login
  */
-router.post('/login', (req, res, next) => {
+router.post('/login', (req: Request, res: Response, next: NextFunction) => {
 
 	if (!req.body.user.email)  {
 		return res.status(422).json( {errors: {email: "Can't be blank"}} );
