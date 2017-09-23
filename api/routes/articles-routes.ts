@@ -1,7 +1,7 @@
 
 import { Router, NextFunction, Response } from 'express';
 import { authentication } from '../utilities/authentication';
-import { JWTRequest, ProfileRequest } from '../interfaces/requests-interface';
+import { ArticleRequest, JWTRequest, ProfileRequest } from '../interfaces/requests-interface';
 import { Article, IArticleModel } from '../models/article-model';
 import { IUserModel, User } from '../models/user-model';
 import { IQuery } from '../interfaces/article-interface';
@@ -13,11 +13,27 @@ const Promise = require('bluebird');  // FIXME: how to handle this in Typescript
 
 
 /**
- * GET /api/articles
+ * PARAM :slug
  */
-// FIXME: authorized user who has favorited own articles showing false.
-// Should show true for all returned josh articles
-router.get('/', authentication.optional, (req: ProfileRequest, res: Response, next: NextFunction) => {
+
+router.param('slug', (req: ArticleRequest, res: Response, next: NextFunction, slug: string) => {
+
+	Article
+		.findOne({slug})
+		.populate('author')
+		.then( (article: IArticleModel) => {
+			req.article = article;
+			return next();
+		})
+		.catch(next);
+});
+
+
+/**
+ * Helper function to determine the requesting user (if any)
+ */
+// FIXME: Not sure there is a req.profile... make this robust...
+function establishRequestingUser(req: ProfileRequest): IUserModel {
 
 	//  Try to determine the user making the request
 	let thisUser: IUserModel;
@@ -27,7 +43,7 @@ router.get('/', authentication.optional, (req: ProfileRequest, res: Response, ne
 		User
 			.findById(req.payload.id)
 			.then( (user: IUserModel) => {
-				return thisUser = req.profile.formatAsProfileJSON(user);
+				return thisUser = user.formatAsProfileJSON(user);
 			})
 			.catch();
 
@@ -35,6 +51,16 @@ router.get('/', authentication.optional, (req: ProfileRequest, res: Response, ne
 	} else {
 		thisUser = req.profile;
 	}
+	return thisUser;
+}
+
+
+/**
+ * GET /api/articles
+ */
+// FIXME: authorized user who has favorited own articles showing false.
+// Should show true for all returned 'josh' articles
+router.get('/', authentication.optional, (req: ProfileRequest, res: Response, next: NextFunction) => {
 
 	// Parse URL query strings and create a query object
 	const limit: number = req.query.limit ? Number(req.query.limit) : 20;
@@ -95,7 +121,7 @@ router.get('/', authentication.optional, (req: ProfileRequest, res: Response, ne
 
 
 			// Define promises
-			const p1 = thisUser;
+			const p1 = establishRequestingUser(req);
 
 			const p2 = Article.count(query).exec();
 			/* ISSUE: Should count be MIN(count, limit)? or should it count all results,
@@ -165,12 +191,49 @@ router.post('/', authentication.required, (req: JWTRequest, res: Response, next:
 });
 
 
+/**
+ * GET /api/articles/:slug
+ */
+// ISSUE: Possibly not showing following correctly for auth user...
+router.get('/:slug', authentication.optional, (req: ArticleRequest, res: Response, next: NextFunction) => {
+
+	const user = establishRequestingUser(req);
+	console.log(user);
+	console.log(req.article);
+
+	const article: IArticleModel = req.article;
+
+	if (article) {
+		res.json(article.formatAsArticleJSON(user));
+	} else {
+		return next();
+	}
+});
+
+
+/**
+ * DELETE /api/articles/:slug
+ */
+router.delete('/:slug', authentication.required, (req: ArticleRequest, res: Response, next: NextFunction) => {
+
+	Article
+		.findOneAndRemove({slug: req.article.slug}, () => {
+			return res.json();
+		})
+		.catch(next);
+});
+
+
+/**
+ * PUT /api/articles/:slug
+ */
+router.put('/:slug', authentication.required, (req: ArticleRequest, res: Response, next: NextFunction) => {
+
+});
+
+
 // TODO: Remaining routes
 // GET /api/articles/feed
-
-// GET /api/articles/:slug
-// PUT /api/articles/:slug
-// DELETE /api/articles/:slug
 
 // POST /api/articles/:slug/comments
 // GET /api/articles/:slug/comments
