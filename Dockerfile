@@ -8,6 +8,14 @@ WORKDIR /usr/src/app
 # Bundle app source
 COPY . /usr/src/app
 
+## Install app dependencies
+RUN npm install
+
+## tell the port number the container should expose
+EXPOSE 3000
+
+## run the application
+CMD ["npm", "run", "dev"]
 
 ## our base image
 #FROM node:6.9.1
@@ -24,8 +32,7 @@ COPY . /usr/src/app
 ## Bundle app source
 #COPY . /usr/src/app
 #
-## tell the port number the container should expose
-#EXPOSE 3000
+
 #
 ## run the application
 #CMD ["nodemon", "app.js"]
