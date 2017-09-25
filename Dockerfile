@@ -1,5 +1,5 @@
 # Base image
-FROM mhart/alpine-node:8.5.0
+FROM node:8.5.0
 
 ## Create app directory
 RUN mkdir -p /usr/src/app
