@@ -18,3 +18,13 @@
 #System Files
 .DS_Store
 Thumbs.db
+
+# Environment Files
+.env
+.env.local
+
+# logs
+/logs
+
+# build
+/buid
