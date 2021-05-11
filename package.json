@@ -56,7 +56,7 @@
     "express-session": "^1.17.1",
     "helmet": "^3.23.3",
     "jsonwebtoken": "^8.5.1",
-    "lodash": "^4.17.19",
+    "lodash": "^4.17.21",
     "mongoose": "^5.9.23",
     "mongoose-unique-validator": "2.0.3",
     "passport": "^0.4.1",
